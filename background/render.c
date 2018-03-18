@@ -137,7 +137,7 @@ static void get_sizes(size_t width, size_t height,
 		return;
 	}
 
-	if (abs(wfactor - hfactor) < 0.001) {
+	if ((wfactor - hfactor) < 0.001 && (wfactor - hfactor) > 0.001) {
 		*cal_width = target_width;
 		*cal_height = target_height;
 		return;
