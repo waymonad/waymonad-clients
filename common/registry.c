@@ -8,6 +8,7 @@
 #include <sys/timerfd.h>
 #include "desktop-shell-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
+#include "background-client-protocol.h"
 #include "common/registry.h"
 //#include "stringop.h"
 //#include "log.h"
@@ -31,7 +32,10 @@ static void display_handle_geometry(void *data, struct wl_output *wl_output,
 }
 
 static void display_handle_done(void *data, struct wl_output *wl_output) {
-	// this space intentionally left blank
+	struct output_state *state = data;
+	if (state->changed) {
+		state->changed(state, state->user_data);
+	}
 }
 
 static void display_handle_scale(void *data, struct wl_output *wl_output, int32_t factor) {
@@ -214,6 +218,7 @@ static const struct wl_seat_listener seat_listener = {
 static void registry_global(void *data, struct wl_registry *registry,
 		uint32_t name, const char *interface, uint32_t version) {
 	struct registry *reg = data;
+	reg->wl_reg = registry;
 
 	if (strcmp(interface, wl_compositor_interface.name) == 0) {
 		reg->compositor = wl_registry_bind(registry, name, &wl_compositor_interface, version);
@@ -224,9 +229,11 @@ static void registry_global(void *data, struct wl_registry *registry,
 	} else if (strcmp(interface, wl_seat_interface.name) == 0) {
 		reg->seat = wl_registry_bind(registry, name, &wl_seat_interface, 1);
 		wl_seat_add_listener(reg->seat, &seat_listener, reg);
+	} else if (strcmp(interface, z_background_interface.name) == 0) {
+		reg->background_name = name;
 	} else if (strcmp(interface, wl_output_interface.name) == 0) {
 		struct wl_output *output = wl_registry_bind(registry, name, &wl_output_interface, version);
-		struct output_state *ostate = malloc(sizeof(struct output_state));
+		struct output_state *ostate = calloc(sizeof(struct output_state), 1);
 		ostate->output = output;
 		ostate->scale = 1;
 		wl_output_add_listener(output, &output_listener, ostate);
@@ -265,7 +272,7 @@ struct registry *registry_poll(void) {
 	wl_registry_add_listener(reg, &registry_listener, registry);
 	wl_display_dispatch(registry->display);
 	wl_display_roundtrip(registry->display);
-	wl_registry_destroy(reg);
+	//wl_registry_destroy(reg);
 
 	return registry;
 }
@@ -292,5 +299,21 @@ void registry_teardown(struct registry *registry) {
 	if (registry->outputs) {
 		list_foreach(registry->outputs, free);
 	}
+	wl_registry_destroy(registry->wl_reg);
 	free(registry);
+}
+
+struct output_state *find_output(struct registry *reg, struct wl_output *out)
+{
+	unsigned i;
+
+	for (i = 0; i < reg->outputs->length; ++i) {
+		struct output_state *state = reg->outputs->items[i];
+
+		if (state->output == out) {
+			return state;
+		}
+	}
+
+	return NULL;
 }

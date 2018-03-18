@@ -106,9 +106,9 @@ void xdg_surface_configure(void *data, struct xdg_surface *xdg_surface, uint32_t
 	bool notify;
 	struct window *window = data;
 
-	notify = window->width != window->next_state.width || window->height != window->next_state.height;
-	window->width = window->next_state.width;
-	window->height = window->next_state.height;
+	notify = window->surface.width != window->next_state.width || window->surface.height != window->next_state.height;
+	window->surface.width = window->next_state.width;
+	window->surface.height = window->next_state.height;
 
 	xdg_surface_ack_configure(xdg_surface, serial);
 
@@ -123,11 +123,24 @@ static const struct xdg_surface_listener surface_listener = {
 };
 
 void window_make_shell(struct window *window) {
-	window->xdg_surface = xdg_wm_base_get_xdg_surface(window->registry->xdg_shell, window->surface);
+	window->xdg_surface = xdg_wm_base_get_xdg_surface(window->registry->xdg_shell, window->surface.surface);
 	xdg_surface_add_listener(window->xdg_surface, &surface_listener, window);
 
 	window->xdg_toplevel = xdg_surface_get_toplevel(window->xdg_surface);
 	xdg_toplevel_add_listener(window->xdg_toplevel, &toplevel_listener, window);
+}
+
+void setup_surface(struct surface *surface, struct registry *registry,
+                   uint32_t width, uint32_t height, int32_t scale)
+{
+	surface->height = height;
+	surface->width = width;
+	surface->scale = scale;
+	surface->registry = registry;
+
+	surface->surface = wl_compositor_create_surface(registry->compositor);
+
+	surface_next_buffer(surface);
 }
 
 struct window *xdg_window_setup(struct registry *registry,
@@ -135,15 +148,14 @@ struct window *xdg_window_setup(struct registry *registry,
 {
 	struct window *window = malloc(sizeof(struct window));
 	memset(window, 0, sizeof(struct window));
-	window->next_state.width = window->width = width;
-	window->next_state.height = window->height = height;
-	window->scale = scale;
+	window->next_state.height = height;
+	window->next_state.width = width;
+	setup_surface(&window->surface, registry, width, height, scale);
 	window->registry = registry;
 	window->font = "monospace 10";
 
-	window->surface = wl_compositor_create_surface(registry->compositor);
 	window_make_shell(window);
-	wl_surface_commit(window->surface);
+	wl_surface_commit(window->surface.surface);
 
 	if (registry->pointer) {
 		wl_pointer_add_listener(registry->pointer, &pointer_listener, window);
@@ -180,34 +192,44 @@ struct window *xdg_window_setup(struct registry *registry,
 }
 
 static void frame_callback(void *data, struct wl_callback *callback, uint32_t time) {
-	struct window *window = data;
+	struct surface *surface = data;
 	wl_callback_destroy(callback);
-	window->frame_cb = NULL;
+	surface->frame_cb = NULL;
 }
 
 static const struct wl_callback_listener listener = {
 	frame_callback
 };
 
-int window_prerender(struct window *window) {
-	if (window->frame_cb) {
+int surface_prerender(struct surface *surface) {
+	if (surface->frame_cb) {
 		return 0;
 	}
 
-	get_next_buffer(window);
+	surface_next_buffer(surface);
 	return 1;
 }
 
-int window_render(struct window *window) {
-	window->frame_cb = wl_surface_frame(window->surface);
-	wl_callback_add_listener(window->frame_cb, &listener, window);
+int surface_render(struct surface *surface)
+{
+	surface->frame_cb = wl_surface_frame(surface->surface);
+	wl_callback_add_listener(surface->frame_cb, &listener, surface);
 
-	wl_surface_attach(window->surface, window->buffer->buffer, 0, 0);
-	wl_surface_set_buffer_scale(window->surface, window->scale);
-	wl_surface_damage(window->surface, 0, 0, window->width, window->height);
-	wl_surface_commit(window->surface);
+	wl_surface_attach(surface->surface, surface->buffer->buffer, 0, 0);
+	wl_surface_set_buffer_scale(surface->surface, surface->scale);
+	wl_surface_damage(surface->surface, 0, 0, surface->width, surface->height);
+	wl_surface_commit(surface->surface);
 
 	return 1;
+
+}
+
+int window_prerender(struct window *window) {
+	return surface_prerender(&window->surface);
+}
+
+int window_render(struct window *window) {
+	return surface_render(&window->surface);
 }
 
 void window_teardown(struct window *window) {

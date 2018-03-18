@@ -50,7 +50,7 @@ static const struct wl_buffer_listener buffer_listener = {
 	.release = buffer_release
 };
 
-static struct buffer *create_buffer(struct window *window, struct buffer *buf,
+static struct buffer *create_buffer(struct registry *registry, struct buffer *buf,
 		int32_t width, int32_t height, int32_t scale, uint32_t format) {
 
 	width *= scale;
@@ -65,7 +65,7 @@ static struct buffer *create_buffer(struct window *window, struct buffer *buf,
 		exit(-1);
 	}
 	void *data = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	struct wl_shm_pool *pool = wl_shm_create_pool(window->registry->shm, fd, size);
+	struct wl_shm_pool *pool = wl_shm_create_pool(registry->shm, fd, size);
 	buf->buffer = wl_shm_pool_create_buffer(pool, 0,
 			width, height, stride, format);
 	wl_shm_pool_destroy(pool);
@@ -102,33 +102,37 @@ static void destroy_buffer(struct buffer *buffer) {
 }
 
 struct buffer *get_next_buffer(struct window *window) {
+	return surface_next_buffer(&window->surface);
+}
+
+struct buffer *surface_next_buffer(struct surface *surface) {
 	struct buffer *buffer = NULL;
 
 	int i;
 	for (i = 0; i < 2; ++i) {
-		if (window->buffers[i].busy) {
+		if (surface->buffers[i].busy) {
 			continue;
 		}
-		buffer = &window->buffers[i];
+		buffer = &surface->buffers[i];
 	}
 
 	if (!buffer) {
 		return NULL;
 	}
 
-	if (buffer->width != window->width || buffer->height != window->height) {
+	if (buffer->width != surface->width || buffer->height != surface->height) {
 		destroy_buffer(buffer);
 	}
 
 	if (!buffer->buffer) {
-		if (!create_buffer(window, buffer,
-					window->width, window->height, window->scale,
+		if (!create_buffer(surface->registry, buffer,
+					surface->width, surface->height, surface->scale,
 					WL_SHM_FORMAT_ARGB8888)) {
 			return NULL;
 		}
 	}
 
-	window->cairo = buffer->cairo;
-	window->buffer = buffer;
+	surface->cairo = buffer->cairo;
+	surface->buffer = buffer;
 	return buffer;
 }

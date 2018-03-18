@@ -2,6 +2,7 @@
 #define _SWAY_CLIENT_REGISTRY_H
 
 #include <wayland-client.h>
+#include <wayland-util.h>
 #include <xkbcommon/xkbcommon.h>
 #include "desktop-shell-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
@@ -35,6 +36,9 @@ struct output_state {
 	uint32_t flags;
 	uint32_t width, height;
 	uint32_t scale;
+
+	void *user_data;
+	void (*changed)(struct output_state *, void *);
 };
 
 struct xkb {
@@ -65,12 +69,16 @@ struct registry {
 	struct wl_shm *shm;
 	struct desktop_shell *desktop_shell;
 	struct xdg_wm_base *xdg_shell;
+	uint32_t background_name;
 	struct lock *swaylock;
 	struct input *input;
+	struct wl_registry *wl_reg;
 	list_t *outputs;
 };
 
 struct registry *registry_poll(void);
 void registry_teardown(struct registry *registry);
+
+struct output_state *find_output(struct registry *reg, struct wl_output *out);
 
 #endif

@@ -43,17 +43,23 @@ struct pointer_input {
 	void (*notify_scroll)(struct window *window, enum scroll_direction direction);
 };
 
-struct window {
+struct surface {
 	struct registry *registry;
 	struct buffer buffers[2];
 	struct buffer *buffer;
 	struct wl_surface *surface;
 	struct wl_callback *frame_cb;
-	struct cursor cursor;
+
 	uint32_t width, height;
 	int32_t scale;
-	char *font;
 	cairo_t *cairo;
+};
+
+struct window {
+	struct registry *registry;
+	struct surface surface;
+	struct cursor cursor;
+	char *font;
 	struct pointer_input pointer_input;
 
 	union {

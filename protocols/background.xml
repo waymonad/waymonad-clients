@@ -35,14 +35,16 @@
 
 	<event name="create_background" />
 
-	<event name="get_background_surface">
+	<request name="get_background_surface">
 		<arg name="id" type="new_id" interface="z_background_surface"/>
 		<arg name="surface" type="object" interface="wl_surface"/>
-	</event>
+	</request>
     </interface>
 
     <interface name="z_background_surface" version="1">
-	<event name="set_fullscreen">
+	<event name="remove"/>
+
+	<event name="set_output">
 		<arg name="output" type="object" interface="wl_output"/>
 	</event>
     </interface>
