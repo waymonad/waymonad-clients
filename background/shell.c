@@ -24,6 +24,17 @@ struct back_surface {
 	struct output_state *output;
 };
 
+void render_background(struct surface *restrict surface, const char *restrict path);
+static void handle_output_change(struct output_state *state, void *data)
+{
+	struct back_surface *surface = data;
+
+	surface->surface.width = state->width;
+	surface->surface.height = state->height;
+	surface->surface.scale = state->scale;
+	render_background(&surface->surface, bg_path);
+}
+
 static void handle_remove(void *data, struct z_background_surface *back_surf)
 {
 	struct back_surface *surface = data;
@@ -39,7 +50,6 @@ static void handle_remove(void *data, struct z_background_surface *back_surf)
 	free(surface);
 }
 
-void render_background(struct surface *restrict surface, const char *restrict path);
 static void handle_set_output(void *data, struct z_background_surface *back_surf,
                               struct wl_output *output)
 {
@@ -49,7 +59,9 @@ static void handle_set_output(void *data, struct z_background_surface *back_surf
 	surface->output = state;
 	surface->surface.width = state->width;
 	surface->surface.height = state->height;
+
 	state->user_data = surface;
+	state->changed = handle_output_change;
 
 	fprintf(stderr, "Handling set_output: %ux%u\n", surface->surface.width, surface->surface.height);
 	render_background(&surface->surface, bg_path);
