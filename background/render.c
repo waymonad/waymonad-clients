@@ -2,6 +2,8 @@
 #include "common/cairo.h"
 #include "common/window.h"
 
+#include "render.h"
+
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
