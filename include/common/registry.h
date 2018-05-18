@@ -69,6 +69,7 @@ struct registry {
 	struct wl_shm *shm;
 	struct desktop_shell *desktop_shell;
 	struct xdg_wm_base *xdg_shell;
+	struct zwlr_layer_shell_v1 *layer_shell;
 	uint32_t background_name;
 	struct lock *swaylock;
 	struct input *input;

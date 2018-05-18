@@ -251,8 +251,6 @@ void render_background(struct surface *restrict surface, const char *restrict pa
 {
 	int index;
 	list_t *candidates = find_candidates(path, surface->width, surface->height, true);
-	fprintf(stderr, "Handling configure\n");
-
 
 	if (!candidates || !candidates->length) {
 		fprintf(stderr, "Couldn't find a suitable candidate\n");

@@ -122,6 +122,7 @@ static void main_loop(struct wl_display *display, struct background_state *state
 	}
 }
 
+void user_layer_shell(struct registry *registry, const char *path);
 int main(int argc, char **argv)
 {
 	struct background_state state = { 0 };
@@ -136,12 +137,16 @@ int main(int argc, char **argv)
 		path = argv[1];
 	}
 
-	state.bg_shell = bind_shell(registry, path);
+	if (!registry->layer_shell) {
+		state.bg_shell = bind_shell(registry, path);
 
-	if (!state.bg_shell) {
-		state.xdg_window = xdg_window_setup(registry, 1280, 720, 1);
-		state.xdg_window->handle_configure = handle_configure;
-		state.xdg_window->userdata = (char *)path;
+		if (!state.bg_shell) {
+			state.xdg_window = xdg_window_setup(registry, 1280, 720, 1);
+			state.xdg_window->handle_configure = handle_configure;
+			state.xdg_window->userdata = (char *)path;
+		}
+	} else {
+		user_layer_shell(registry, path);
 	}
 
 	MagickWandGenesis();

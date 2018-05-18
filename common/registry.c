@@ -9,6 +9,7 @@
 #include "desktop-shell-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
 #include "background-client-protocol.h"
+#include "wlr-layer-shell-unstable-v1-client-protocol.h"
 #include "common/registry.h"
 //#include "stringop.h"
 //#include "log.h"
@@ -240,6 +241,8 @@ static void registry_global(void *data, struct wl_registry *registry,
 		list_add(reg->outputs, ostate);
 	} else if (strcmp(interface, desktop_shell_interface.name) == 0) {
 		reg->desktop_shell = wl_registry_bind(registry, name, &desktop_shell_interface, version);
+	} else if (strcmp(interface, zwlr_layer_shell_v1_interface.name) == 0) {
+		reg->layer_shell = wl_registry_bind(registry, name, &zwlr_layer_shell_v1_interface, version);
 	} else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
 		reg->xdg_shell = wl_registry_bind(registry, name, &xdg_wm_base_interface, version);
 	}

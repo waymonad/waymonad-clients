@@ -20,6 +20,7 @@ protocols = [
 	[wl_protocol_dir, 'unstable/idle-inhibit/idle-inhibit-unstable-v1.xml'],
 	'desktop-shell.xml',
 	'background.xml',
+	'wlr-layer-shell-unstable-v1.xml',
 ]
 
 wl_protos_src = []
