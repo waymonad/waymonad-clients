@@ -28,3 +28,7 @@ are allowed to be a bit more "playful".
 E.g. the background client here does some image processing, and picks "fitting"
 images on its own while swaybg takes a single file and sets it up as
 background.
+
+## On archlinux:
+`PKG_CONFIG_PATH=/usr/lib/imagemagick6/pkgconfig meson build` to use the
+imagemagick version 6, instead of 7
