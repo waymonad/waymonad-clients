@@ -42,7 +42,7 @@ cairo          = dependency('cairo')
 pango          = dependency('pango')
 pango_cairo    = dependency('pangocairo')
 xkbcommon      = dependency('xkbcommon')
-magickwand     = dependency('MagickWand-6.Q16HDRI')
+magickwand     = dependency('MagickWand', version: '>=6', version: '<7')
 math           = cc.find_library('m', required: false)
 
 subdir('protocols')
